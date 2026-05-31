@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Footy Rotation Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f1419;
+    --paper: #f5f1e8;
+    --red: #c8102e;
+    --gold: #d4a017;
+    --green: #2d5016;
+    --grey: #6b6b6b;
+    --soft: #e8e2d3;
+    --blue: #1a5490;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--ink); padding: 24px; min-height: 100vh; }
+  h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
+  h1 { font-size: 44px; line-height: 1; }
+  h4 { font-size: 18px; margin-bottom: 10px; }
+  .header { border-bottom: 3px solid var(--ink); padding-bottom: 16px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+  .header-sub { font-size: 12px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--grey); }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+  select, button, input { font-family: 'Inter', sans-serif; padding: 8px 12px; border: 2px solid var(--ink); background: var(--paper); font-weight: 600; cursor: pointer; font-size: 13px; }
+  input { cursor: text; }
+  button.primary { background: var(--ink); color: var(--paper); }
+  button.primary:hover { background: var(--red); }
+  button.success { background: var(--green); color: white; border-color: var(--green); }
+  button.success:hover { background: var(--ink); }
+  button.ghost { background: transparent; }
+  button:hover { background: var(--soft); }
+  button.primary:hover { background: var(--red); }
+  button.warn { background: var(--gold); color: var(--ink); border-color: var(--ink); }
+  button.warn:hover { background: var(--ink); color: var(--paper); }
+
+  .tabs { display: flex; gap: 0; margin: 0 0 24px 0; border-bottom: 2px solid var(--ink); flex-wrap: wrap; }
+  .tab { padding: 12px 24px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.05em; cursor: pointer; border: 2px solid var(--ink); border-bottom: none; background: var(--soft); margin-right: 4px; margin-bottom: -2px; }
+  .tab.active { background: var(--ink); color: var(--paper); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .draft-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid var(--ink);
+    margin-left: 8px;
+    letter-spacing: 0.1em;
+  }
+  .draft-badge.editing { background: var(--blue); color: white; }
+
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: white; border: 2px solid var(--ink); padding: 16px; }
+  .panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+  .player-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--soft); font-size: 13px; }
+  .player-row:last-child { border-bottom: none; }
+  .jumper { background: var(--ink); color: var(--paper); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+  .player-name { font-weight: 600; }
+  .player-tags { font-size: 10px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+  .icon-btn { background: none; border: 1px solid var(--ink); padding: 4px 6px; font-size: 11px; cursor: pointer; }
+  .toggle { width: 36px; height: 20px; background: var(--soft); border: 1px solid var(--ink); border-radius: 10px; position: relative; cursor: pointer; }
+  .toggle.on { background: var(--green); }
+  .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left 0.15s; }
+  .toggle.on::after { left: 18px; }
+
+  .quarters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 700px) { .quarters { grid-template-columns: repeat(2, 1fr); } }
+  .quarter-tab { border: 2px solid var(--ink); padding: 10px; text-align: center; cursor: pointer; background: white; }
+  .quarter-tab.active { background: var(--ink); color: var(--paper); }
+  .quarter-num { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; }
+  .quarter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  .ground { background: linear-gradient(180deg, #4a7c2e 0%, #5a8f38 50%, #4a7c2e 100%); border: 3px solid var(--ink); border-radius: 200px / 50px; padding: 16px; position: relative; min-height: 500px; }
+  .zone { background: rgba(255,255,255,0.96); border: 2px dashed var(--ink); padding: 12px; margin-bottom: 12px; border-radius: 8px; min-height: 70px; transition: background 0.15s; }
+  .zone.drag-over { background: #fff8d6; border-style: solid; }
+  .zone:last-child { margin-bottom: 0; }
+  .zone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--ink); }
+  .zone-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+  .zone-sub { font-size: 10px; color: var(--grey); font-style: italic; margin-left: 6px; }
+  .zone-forward .zone-title { color: var(--red); }
+  .zone-mid .zone-title { color: var(--gold); }
+  .zone-back .zone-title { color: var(--green); }
+  .zone-count { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.1em; }
+  .zone-balance { font-size: 11px; font-weight: 600; margin-left: 8px; }
+  .zone-balance.good { color: var(--green); }
+  .zone-balance.warn { color: var(--red); }
+
+  .player-chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--paper); border: 1.5px solid var(--ink); padding: 4px 10px 4px 4px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: grab; user-select: none; touch-action: none; }
+  .chip:active { cursor: grabbing; }
+  .chip.dragging { opacity: 0.4; }
+  .chip .jumper { width: 22px; height: 22px; font-size: 10px; }
+  .chip-rating { font-size: 9px; color: var(--grey); }
+
+  .bench { background: var(--soft); border: 2px solid var(--ink); padding: 12px; margin-top: 12px; min-height: 60px; transition: background 0.15s; }
+  .bench.drag-over { background: #fff8d6; }
+  .bench-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; margin-bottom: 8px; }
+
+  .tracker-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .tracker-table th, .tracker-table td { text-align: center; padding: 6px 4px; border-bottom: 1px solid var(--soft); }
+  .tracker-table th { background: var(--ink); color: var(--paper); font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.05em; }
+  .tracker-table td:first-child { text-align: left; font-weight: 600; }
+  .heat-0 { background: #fff5f5; }
+  .heat-1 { background: #fff; }
+  .heat-2 { background: #f0f7ed; }
+  .heat-3 { background: #d6e8c9; }
+
+  .flag { color: var(--red); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .legend { font-size: 11px; color: var(--grey); margin-top: 8px; line-height: 1.6; }
+  .hint { font-size: 11px; color: var(--grey); margin-bottom: 8px; font-style: italic; }
+
+  .modal-bg { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--paper); border: 3px solid var(--ink); padding: 24px; max-width: 480px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 28px; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; margin-bottom: 4px; }
+  .field input, .field select { width: 100%; padding: 8px; }
+  .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tag-opt { border: 2px solid var(--ink); padding: 6px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 600; background: white; }
+  .tag-opt.selected { background: var(--ink); color: var(--paper); }
+  .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .danger { background: var(--red); color: white; border-color: var(--red); }
+
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .admin-grid { grid-template-columns: 1fr; } }
+  .admin-section { background: white; border: 2px solid var(--ink); padding: 20px; }
+  .admin-section h3 { font-size: 22px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 16px; }
+  .radio-group { display: flex; gap: 8px; }
+  .radio-opt { flex: 1; border: 2px solid var(--ink); padding: 12px; text-align: center; cursor: pointer; background: white; font-weight: 600; font-size: 13px; }
+  .radio-opt.selected { background: var(--ink); color: var(--paper); }
+  .radio-opt small { display: block; font-weight: 400; font-size: 10px; margin-top: 4px; opacity: 0.8; }
+
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .rules-grid { grid-template-columns: 1fr; } }
+  .fit-matrix { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .fit-matrix th, .fit-matrix td { padding: 8px; border: 1px solid var(--ink); text-align: center; font-size: 12px; }
+  .fit-matrix th { background: var(--ink); color: var(--paper); font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.05em; }
+  .fit-matrix td:first-child { text-align: left; font-weight: 600; }
+  .fit-cell { cursor: pointer; user-select: none; font-weight: 700; color: transparent; }
+  .fit-cell.on { background: var(--green); color: white; }
+  .fit-cell:hover { background: var(--soft); }
+  .fit-cell.on:hover { background: var(--green); opacity: 0.85; }
+
+  .save-banner { display: none; background: var(--green); color: white; padding: 12px; margin-bottom: 16px; border: 2px solid var(--ink); font-weight: 600; text-align: center; }
+  .save-banner.show { display: block; }
+
+  /* Edit banner */
+  .editing-bar {
+    display: none;
+    background: var(--blue);
+    color: white;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border: 2px solid var(--ink);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .editing-bar.show { display: flex; }
+  .editing-bar strong { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.05em; }
+
+  /* History */
+  .history-card {
+    background: white;
+    border: 2px solid var(--ink);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  .history-card.being-edited {
+    background: #e8f0f9;
+    border-color: var(--blue);
+    border-width: 3px;
+  }
+  @media (max-width: 600px) {
+    .history-card { grid-template-columns: 1fr; }
+  }
+  .history-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; }
+  .history-meta { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+  .history-meta .editing-tag { color: var(--blue); font-weight: 700; }
+  .history-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .empty-state {
+    background: white;
+    border: 2px dashed var(--ink);
+    padding: 40px;
+    text-align: center;
+    color: var(--grey);
+  }
+  .empty-state h3 { color: var(--ink); margin-bottom: 8px; }
+
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--soft); text-align: center; font-size: 11px; color: var(--grey); letter-spacing: 0.05em; }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .print-page { page-break-after: always; padding: 20px; min-height: 95vh; }
+    .print-page:last-child { page-break-after: auto; }
+    .ground { min-height: auto; background: white !important; border: 3px solid var(--ink); }
+    .zone { background: white !important; border: 2px solid var(--ink); page-break-inside: avoid; }
+    .chip { border: 2px solid var(--ink); background: white !important; }
+    .zone-forward .zone-title { color: var(--ink); }
+    .zone-mid .zone-title { color: var(--ink); }
+    .zone-back .zone-title { color: var(--ink); }
+  }
+  .print-only { display: none; }
+  .print-header { text-align: center; border-bottom: 3px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; }
+  .print-header h1 { font-size: 36px; }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+
+<div class="header">
+  <div>
+    <div class="header-sub" id="header-season">Season 2026</div>
+    <h1 id="header-title">ROTATION BOARD</h1>
+  </div>
+  <div class="controls" id="game-controls">
+    <label>On Ground: <input type="number" id="onground" min="6" max="22" step="1" style="width:70px;" value="12"></label>
+    <button class="primary" onclick="generateRotations()">⟳ Generate</button>
+    <button class="success" id="save-match-btn" onclick="openSaveMatchModal()">✓ Save Match</button>
+    <button onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="game">GAME DAY</div>
+  <div class="tab" data-tab="history">HISTORY <span id="history-count" style="font-size:11px;opacity:0.7;"></span></div>
+  <div class="tab" data-tab="admin">ADMIN</div>
+</div>
+
+<!-- GAME DAY TAB -->
+<div class="tab-content active" id="tab-game">
+
+<div class="editing-bar" id="editing-bar">
+  <span>📝 <strong id="editing-label">EDITING MATCH</strong> · changes update season totals live · save when done</span>
+  <button class="ghost" style="border-color:white;color:white;" onclick="cancelEdit()">Discard Changes</button>
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <div class="panel-title">
+      SQUAD
+      <span style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:11px;color:var(--grey);" id="available-count">0 avail</span>
+        <button class="icon-btn" onclick="openPlayerModal()">+ Add</button>
+      </span>
+    </div>
+    <div id="squad"></div>
+    <div class="legend">
+      <strong>Tags:</strong> ST=Strong · RN=Runner · GK=Goal-kicker · DF=Defender · QK=Quick · KK=Kick · DV=Developing
+      <br><strong>Rating:</strong> ●●● Strong · ●● Solid · ● Developing
+      <br><em>Tap ✎ to edit. Toggle green switch off for absences.</em>
+    </div>
+  </div>
+
+  <div>
+    <div class="quarters" id="quarters"></div>
+
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-title">
+        <span>
+          <span id="quarter-title">QUARTER 1</span>
+          <span class="draft-badge" id="draft-badge" style="display:none;">DRAFT · NOT SAVED</span>
+        </span>
+        <span class="header-sub" id="zone-size">— / — / — per zone</span>
+      </div>
+      <div class="hint">Drag any player between zones or to the bench. Season totals update live. Hit <strong>✓ Save Match</strong> when finished to lock it in.</div>
+
+      <div class="ground">
+        <div class="zone zone-forward" data-zone="fwd" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'fwd')">
+          <div class="zone-header">
+            <div><span class="zone-title">FORWARD</span><span class="zone-sub" id="fwd-sub"></span></div>
+            <div>
+              <span class="zone-count" id="fwd-count">0 players</span>
+              <span class="zone-balance" id="fwd-balance"></span>
+            </div>
+          </div>
+          <div class="player-chips" id="fwd-chips"></div>
+        </div>
+
+        <div class="zone zone-mid" data-zone="mid" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'mid')">
+          <div class="zone-header">
+            <div><span class="zone-title">MIDFIELD</span><span class="zone-sub" id="mid-sub"></span></div>
+            <div>
+              <span class="zone-count" id="mid-count">0 players</span>
+              <span class="zone-balance" id="mid-balance"></span>
+            </div>
+          </div>
+          <div class="player-chips" id="mid-chips"></div>
+        </div>
+
+        <div class="zone zone-back" data-zone="back" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'back')">
+          <div class="zone-header">
+            <div><span class="zone-title">BACK</span><span class="zone-sub" id="back-sub"></span></div>
+            <div>
+              <span class="zone-count" id="back-count">0 players</span>
+              <span class="zone-balance" id="back-balance"></span>
+            </div>
+          </div>
+          <div class="player-chips" id="back-chips"></div>
+        </div>
+      </div>
+
+      <div class="bench" data-zone="bench" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'bench')">
+        <div class="bench-title">BENCH</div>
+        <div class="player-chips" id="bench-chips"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        SEASON ZONE TIME
+        <span class="header-sub" id="season-summary">from 0 saved matches</span>
+      </div>
+      <table class="tracker-table">
+        <thead>
+          <tr><th>Player</th><th>FWD</th><th>MID</th><th>BACK</th><th>BENCH</th><th>Flag</th></tr>
+        </thead>
+        <tbody id="tracker-body"></tbody>
+      </table>
+      <div class="legend">Totals come from saved matches only. Current draft doesn't affect totals — they update when you Save Match (and re-update if you edit and save again). Flag triggers if a player has &lt;2 quarters forward this season once she's played 4+ quarters total.</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="tab-content" id="tab-history">
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="panel-title">SEASON SUMMARY</div>
+    <p style="font-size:14px;"><strong id="history-summary-count">0</strong> matches saved · <strong id="history-summary-quarters">0</strong> total quarters · since <span id="history-summary-since">—</span></p>
+  </div>
+
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="panel-title">PLAYER BREAKDOWN <span class="header-sub">from saved matches only</span></div>
+    <table class="tracker-table">
+      <thead>
+        <tr><th>Player</th><th>Games</th><th>FWD</th><th>MID</th><th>BACK</th><th>BENCH</th><th>Total</th></tr>
+      </thead>
+      <tbody id="season-summary-body"></tbody>
+    </table>
+    <div class="legend">Total = all four zones added up (every quarter played including bench). For a player rostered every match, Total = Games × 4. Drafts don't count — only Save Match locks data in.</div>
+  </div>
+
+  <div class="panel-title" style="margin-top:24px;">MATCHES</div>
+  <div id="history-list"></div>
+</div>
+
+<!-- ADMIN TAB -->
+<div class="tab-content" id="tab-admin">
+
+<div class="save-banner" id="save-banner">Settings saved.</div>
+
+<div class="admin-grid">
+
+  <div class="admin-section">
+    <h3>TEAM</h3>
+    <div class="field">
+      <label>Team Name</label>
+      <input type="text" id="set-teamname" placeholder="e.g. Altona Roosters U10 Girls">
+    </div>
+    <div class="field">
+      <label>Season Label</label>
+      <input type="text" id="set-season" placeholder="e.g. Season 2026">
+    </div>
+  </div>
+
+  <div class="admin-section">
+    <h3>GAME FORMAT</h3>
+    <div class="field">
+      <label>Mode</label>
+      <div class="radio-group" id="mode-radio">
+        <div class="radio-opt" data-mode="zoned">ZONED<small>U10s · juniors · netball-style zones</small></div>
+        <div class="radio-opt" data-mode="fullground">FULL GROUND<small>18-a-side · midfield includes wings</small></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Default Players On Ground</label>
+      <input type="number" id="set-onground" min="6" max="22" step="1">
+      <div class="legend" id="onground-hint" style="margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <div class="admin-section" style="grid-column: 1 / -1;">
+    <h3>ROTATION RULES</h3>
+    <p class="legend" style="margin-bottom:16px;font-size:12px;">These rules guide how the Generate button builds each zone. Changes apply on the next Generate.</p>
+
+    <div class="rules-grid">
+      <div>
+        <h4>POSITION FIT</h4>
+        <p class="legend" style="margin-top:0;">Tick which tags suit each zone. Players whose tags fit get a bonus when the zone is being built.</p>
+        <table class="fit-matrix">
+          <thead>
+            <tr><th>Player Tag</th><th>FWD</th><th>MID</th><th>BACK</th></tr>
+          </thead>
+          <tbody id="fit-matrix-body"></tbody>
+        </table>
+      </div>
+
+      <div>
+        <h4>ZONE COMPOSITION</h4>
+        <p class="legend" style="margin-top:0;">Caps on the strength mix of each zone.</p>
+
+        <div class="field">
+          <label>Min ●●● Strong per zone</label>
+          <input type="number" id="set-minstrong" min="0" max="5" step="1">
+          <div class="legend" style="margin-top:4px;">Each zone gets at least this many rating-3 players (if available).</div>
+        </div>
+
+        <div class="field">
+          <label>Max ● Developing per zone</label>
+          <input type="number" id="set-maxdev" min="0" max="10" step="1">
+          <div class="legend" style="margin-top:4px;">No zone gets more than this many rating-1 players (if avoidable).</div>
+        </div>
+
+        <div class="field">
+          <label>Fairness Priority</label>
+          <div class="radio-group" id="fairness-radio">
+            <div class="radio-opt" data-fairness="equal">EQUAL TIME<small>Best for juniors</small></div>
+            <div class="radio-opt" data-fairness="best_fit">BEST FIT<small>Competitive teams</small></div>
+          </div>
+          <div class="legend" style="margin-top:6px;">Equal Time pushes hard for zone variety. Best Fit lets stronger players stay in their best positions more often.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="primary" onclick="saveSettings()">Save All Settings</button>
+      <button class="ghost" onclick="restoreDefaultRules()">Restore Default Rules</button>
+    </div>
+  </div>
+
+  <div class="admin-section" style="grid-column: 1 / -1;">
+    <h3>SEASON SUMMARY</h3>
+    <p class="legend" style="margin-bottom:12px;">Per-player breakdown of zone quarters from saved matches only.</p>
+    <table class="tracker-table">
+      <thead>
+        <tr><th>Player</th><th>Games</th><th>FWD</th><th>MID</th><th>BACK</th><th>BENCH</th><th>Total</th></tr>
+      </thead>
+      <tbody id="admin-summary-body"></tbody>
+    </table>
+  </div>
+
+  <div class="admin-section" style="grid-column: 1 / -1;">
+    <h3>DATA</h3>
+    <p style="font-size:13px;margin-bottom:12px;">
+      Squad: <strong id="admin-squad-count">0</strong> players ·
+      History: <strong id="admin-history-count">0</strong> matches saved.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="primary" onclick="switchTab('game'); openPlayerModal();">+ Add Player</button>
+      <button class="ghost" onclick="exportData()">⤓ Export Data (Backup)</button>
+      <button class="ghost" onclick="document.getElementById('import-file').click()">⤒ Import Data</button>
+      <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+      <button class="danger" onclick="resetSeason()">⚠ Reset Season</button>
+    </div>
+    <div class="legend" style="margin-top:12px;">Export creates a JSON backup of squad, settings, and full match history. Reset Season clears all saved matches and current draft — use at the start of a new season.</div>
+  </div>
+
+</div>
+</div>
+
+<div class="footer">
+  Footy Rotation Board · Built by Dave Hudson · Share freely with other coaches
+</div>
+
+</div>
+
+<!-- PLAYER EDIT MODAL -->
+<div class="modal-bg no-print" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Edit Player</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="m-name">
+    </div>
+    <div class="field">
+      <label>Jumper Number</label>
+      <input type="number" id="m-num">
+    </div>
+    <div class="field">
+      <label>Rating</label>
+      <select id="m-rating">
+        <option value="1">● Developing</option>
+        <option value="2">●● Solid</option>
+        <option value="3">●●● Strong</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tags (pick 1–3)</label>
+      <div class="tag-grid" id="m-tags">
+        <div class="tag-opt" data-tag="ST">Strong</div>
+        <div class="tag-opt" data-tag="RN">Runner</div>
+        <div class="tag-opt" data-tag="GK">Goal-kicker</div>
+        <div class="tag-opt" data-tag="DF">Defender</div>
+        <div class="tag-opt" data-tag="QK">Quick</div>
+        <div class="tag-opt" data-tag="KK">Reliable Kick</div>
+        <div class="tag-opt" data-tag="DV">Developing</div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="danger" id="m-delete" onclick="deletePlayer()">Delete</button>
+      <button onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="savePlayer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE MATCH MODAL -->
+<div class="modal-bg no-print" id="save-match-modal">
+  <div class="modal">
+    <h2 id="save-modal-title">Save Match to Season</h2>
+    <p style="font-size:13px;color:var(--grey);margin-bottom:14px;" id="save-modal-desc">This locks the current rotations into your season history.</p>
+    <div class="field">
+      <label>Match Label</label>
+      <input type="text" id="save-match-label" placeholder="e.g. Round 5 or vs Spotswood">
+    </div>
+    <div class="field">
+      <label>Match Date</label>
+      <input type="date" id="save-match-date">
+    </div>
+    <div class="modal-buttons">
+      <button onclick="closeSaveMatchModal()">Cancel</button>
+      <button class="success" id="save-match-confirm" onclick="confirmSaveMatch()">✓ Save Match</button>
+    </div>
+  </div>
+</div>
+
+<div class="print-only" id="print-view"></div>
+
+<script>
+const DEFAULT_SQUAD = [
+  { id: 1,  name: 'Ava',     num: 1,  rating: 3, tags: ['ST','GK'],  available: true },
+  { id: 2,  name: 'Bella',   num: 2,  rating: 2, tags: ['RN','QK'],  available: true },
+  { id: 3,  name: 'Charlie', num: 3,  rating: 3, tags: ['ST','RN'],  available: true },
+  { id: 4,  name: 'Daisy',   num: 4,  rating: 1, tags: ['DV'],       available: true },
+  { id: 5,  name: 'Ella',    num: 5,  rating: 2, tags: ['DF','KK'],  available: true },
+  { id: 6,  name: 'Frankie', num: 6,  rating: 3, tags: ['ST','DF'],  available: true },
+  { id: 7,  name: 'Grace',   num: 7,  rating: 2, tags: ['GK','QK'],  available: true },
+  { id: 8,  name: 'Harper',  num: 8,  rating: 1, tags: ['DV','RN'],  available: true },
+  { id: 9,  name: 'Indi',    num: 9,  rating: 2, tags: ['RN','KK'],  available: true },
+  { id: 10, name: 'Jess',    num: 10, rating: 3, tags: ['ST','GK'],  available: true },
+  { id: 11, name: 'Kit',     num: 11, rating: 2, tags: ['DF','QK'],  available: true },
+  { id: 12, name: 'Lola',    num: 12, rating: 1, tags: ['DV','GK'],  available: true },
+  { id: 13, name: 'Mia',     num: 13, rating: 2, tags: ['RN'],       available: true },
+  { id: 14, name: 'Nina',    num: 14, rating: 3, tags: ['DF','KK'],  available: true },
+  { id: 15, name: 'Olive',   num: 15, rating: 1, tags: ['DV','DF'],  available: true },
+  { id: 16, name: 'Poppy',   num: 16, rating: 2, tags: ['QK','RN'],  available: true },
+];
+
+const DEFAULT_TAG_FIT = {
+  'ST': { fwd: false, mid: true,  back: false },
+  'RN': { fwd: false, mid: true,  back: false },
+  'GK': { fwd: true,  mid: false, back: false },
+  'DF': { fwd: false, mid: false, back: true },
+  'QK': { fwd: false, mid: true,  back: false },
+  'KK': { fwd: false, mid: false, back: true }
+};
+
+const TAGS_FOR_MATRIX = [
+  { code: 'ST', label: 'Strong' },
+  { code: 'RN', label: 'Runner' },
+  { code: 'GK', label: 'Goal-kicker' },
+  { code: 'DF', label: 'Defender' },
+  { code: 'QK', label: 'Quick' },
+  { code: 'KK', label: 'Reliable Kick' }
+];
+
+const DEFAULT_SETTINGS = {
+  teamName: 'U10 Girls Rotation Board',
+  seasonLabel: 'Season 2026',
+  mode: 'zoned',
+  defaultOnGround: 12,
+  tagFit: { ...DEFAULT_TAG_FIT },
+  minStrongPerZone: 1,
+  maxDevelopingPerZone: 2,
+  fairnessPriority: 'equal'
+};
+
+const FAIRNESS_WEIGHTS = {
+  equal:    { variety: 100, season: 5, tagFit: 8 },
+  best_fit: { variety: 30,  season: 2, tagFit: 18 }
+};
+
+const STORAGE_PREFIX = 'footyRotation_';
+
+let squad = [];
+let history = [];
+let rotations = { 1: null, 2: null, 3: null, 4: null };
+let seasonTotals = {};
+let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+let currentQuarter = 1;
+let editingPlayerId = null;
+let editingMatchId = null;   // ID of saved match currently loaded for edit
+let printingMatch = null;
+
+// ============== STORAGE ==============
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_PREFIX + 'squad');
+    squad = s ? JSON.parse(s) : [...DEFAULT_SQUAD];
+  } catch { squad = [...DEFAULT_SQUAD]; }
+
+  try {
+    const h = localStorage.getItem(STORAGE_PREFIX + 'history');
+    history = h ? JSON.parse(h) : [];
+  } catch { history = []; }
+
+  try {
+    const r = localStorage.getItem(STORAGE_PREFIX + 'rotations');
+    rotations = r ? JSON.parse(r) : { 1:null, 2:null, 3:null, 4:null };
+  } catch { rotations = { 1:null, 2:null, 3:null, 4:null }; }
+
+  try {
+    const em = localStorage.getItem(STORAGE_PREFIX + 'editingMatchId');
+    editingMatchId = em || null;
+    // Validate that ID still exists
+    if (editingMatchId && !history.find(m => m.id === editingMatchId)) {
+      editingMatchId = null;
+    }
+  } catch { editingMatchId = null; }
+
+  try {
+    const st = localStorage.getItem(STORAGE_PREFIX + 'settings');
+    if (st) {
+      const loaded = JSON.parse(st);
+      settings = { ...DEFAULT_SETTINGS, ...loaded };
+      settings.tagFit = { ...DEFAULT_TAG_FIT, ...(loaded.tagFit || {}) };
+    }
+  } catch { settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
+
+  try { localStorage.removeItem(STORAGE_PREFIX + 'seasonTotals'); } catch(e) {}
+}
+
+function saveSquad() { try { localStorage.setItem(STORAGE_PREFIX + 'squad', JSON.stringify(squad)); } catch(e) {} }
+function saveHistory() { try { localStorage.setItem(STORAGE_PREFIX + 'history', JSON.stringify(history)); } catch(e) {} }
+function saveRotations() { try { localStorage.setItem(STORAGE_PREFIX + 'rotations', JSON.stringify(rotations)); } catch(e) {} }
+function persistSettings() { try { localStorage.setItem(STORAGE_PREFIX + 'settings', JSON.stringify(settings)); } catch(e) {} }
+function saveEditingId() {
+  try {
+    if (editingMatchId) localStorage.setItem(STORAGE_PREFIX + 'editingMatchId', editingMatchId);
+    else localStorage.removeItem(STORAGE_PREFIX + 'editingMatchId');
+  } catch(e) {}
+}
+
+// ============== SEASON TOTALS ==============
+function accumulateRotations(rots, totals) {
+  Object.values(rots || {}).forEach(q => {
+    if (!q) return;
+    ['fwd','mid','back','bench'].forEach(z => {
+      (q[z] || []).forEach(p => {
+        if (!totals[p.id]) totals[p.id] = { fwd:0, mid:0, back:0, bench:0 };
+        totals[p.id][z]++;
+      });
+    });
+  });
+}
+
+// All-history totals (used by tracker, summary tables, and the Generate algorithm).
+// Drafts never count — only saved matches contribute to totals.
+function computeSeasonTotalsFromHistory() {
+  const totals = {};
+  squad.forEach(p => totals[p.id] = { fwd:0, mid:0, back:0, bench:0 });
+  history.forEach(match => {
+    accumulateRotations(match.rotations, totals);
+  });
+  return totals;
+}
+
+function recomputeSeason() {
+  seasonTotals = computeSeasonTotalsFromHistory();
+  renderTracker();
+  renderSeasonSummary();
+  updateHistoryCounts();
+}
+
+// Per-player season summary from saved matches only (Games + zone quarters)
+function computeHistorySummary() {
+  const summary = {};
+  squad.forEach(p => summary[p.id] = { games: 0, fwd: 0, mid: 0, back: 0, bench: 0 });
+
+  history.forEach(match => {
+    const appeared = new Set();
+    Object.values(match.rotations || {}).forEach(q => {
+      if (!q) return;
+      ['fwd','mid','back','bench'].forEach(z => {
+        (q[z] || []).forEach(p => {
+          if (!summary[p.id]) summary[p.id] = { games: 0, fwd: 0, mid: 0, back: 0, bench: 0 };
+          summary[p.id][z]++;
+          appeared.add(p.id);
+        });
+      });
+    });
+    appeared.forEach(id => { if (summary[id]) summary[id].games++; });
+  });
+
+  return summary;
+}
+
+function renderSeasonSummary() {
+  const summary = computeHistorySummary();
+  const rows = squad.slice().sort((a,b) => a.num - b.num).map(p => {
+    const s = summary[p.id] || { games:0, fwd:0, mid:0, back:0, bench:0 };
+    const total = s.fwd + s.mid + s.back + s.bench;
+    return `
+      <tr>
+        <td>#${p.num} ${p.name}</td>
+        <td>${s.games}</td>
+        <td class="heat-${Math.min(3,s.fwd)}">${s.fwd}</td>
+        <td class="heat-${Math.min(3,s.mid)}">${s.mid}</td>
+        <td class="heat-${Math.min(3,s.back)}">${s.back}</td>
+        <td>${s.bench}</td>
+        <td><strong>${total}</strong></td>
+      </tr>
+    `;
+  }).join('');
+
+  const historyBody = document.getElementById('season-summary-body');
+  const adminBody = document.getElementById('admin-summary-body');
+  if (historyBody) historyBody.innerHTML = rows;
+  if (adminBody) adminBody.innerHTML = rows;
+}
+
+// ============== ZONE SPLIT LOGIC ==============
+function calcZoneSizes(n) {
+  const base = Math.floor(n / 3);
+  const rem = n % 3;
+  if (rem === 0) return [base, base, base];
+  if (rem === 1) return [base, base + 1, base];
+  return [base + 1, base, base + 1];
+}
+
+// ============== APPLY SETTINGS ==============
+function applySettings() {
+  document.getElementById('header-title').textContent = settings.teamName.toUpperCase();
+  document.getElementById('header-season').textContent = settings.seasonLabel;
+  document.title = settings.teamName + ' — Rotation Board';
+
+  const og = document.getElementById('onground');
+  if (!og.dataset.touched) og.value = settings.defaultOnGround;
+
+  const fwdSub = document.getElementById('fwd-sub');
+  const midSub = document.getElementById('mid-sub');
+  const backSub = document.getElementById('back-sub');
+  if (settings.mode === 'fullground') {
+    fwdSub.textContent = '(forwards + half-forwards)';
+    midSub.textContent = '(centre + wings + ruck)';
+    backSub.textContent = '(backs + half-backs)';
+  } else {
+    fwdSub.textContent = '';
+    midSub.textContent = '';
+    backSub.textContent = '';
+  }
+
+  document.getElementById('set-teamname').value = settings.teamName;
+  document.getElementById('set-season').value = settings.seasonLabel;
+  document.getElementById('set-onground').value = settings.defaultOnGround;
+  document.getElementById('set-minstrong').value = settings.minStrongPerZone;
+  document.getElementById('set-maxdev').value = settings.maxDevelopingPerZone;
+  document.querySelectorAll('#mode-radio .radio-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.mode === settings.mode);
+  });
+  document.querySelectorAll('#fairness-radio .radio-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.fairness === settings.fairnessPriority);
+  });
+  updateOnGroundHint();
+  renderFitMatrix();
+}
+
+function updateOnGroundHint() {
+  const n = parseInt(document.getElementById('set-onground').value) || 0;
+  const sizes = calcZoneSizes(n);
+  document.getElementById('onground-hint').textContent =
+    `${n} on ground → ${sizes[0]} forward / ${sizes[1]} midfield / ${sizes[2]} back`;
+}
+
+document.getElementById('set-onground').addEventListener('input', updateOnGroundHint);
+
+// ============== FIT MATRIX ==============
+function renderFitMatrix() {
+  const tbody = document.getElementById('fit-matrix-body');
+  tbody.innerHTML = '';
+  TAGS_FOR_MATRIX.forEach(t => {
+    const fit = settings.tagFit[t.code] || { fwd:false, mid:false, back:false };
+    tbody.innerHTML += `
+      <tr>
+        <td>${t.label} <span style="opacity:0.5;font-size:10px;">${t.code}</span></td>
+        <td class="fit-cell ${fit.fwd?'on':''}" onclick="toggleFit('${t.code}','fwd')">✓</td>
+        <td class="fit-cell ${fit.mid?'on':''}" onclick="toggleFit('${t.code}','mid')">✓</td>
+        <td class="fit-cell ${fit.back?'on':''}" onclick="toggleFit('${t.code}','back')">✓</td>
+      </tr>
+    `;
+  });
+}
+
+function toggleFit(code, zone) {
+  if (!settings.tagFit[code]) settings.tagFit[code] = { fwd:false, mid:false, back:false };
+  settings.tagFit[code][zone] = !settings.tagFit[code][zone];
+  renderFitMatrix();
+  persistSettings();
+}
+
+function restoreDefaultRules() {
+  if (!confirm('Restore default rotation rules? This resets the fit matrix, min/max, and fairness priority. Team name, mode, and on-ground number stay as they are.')) return;
+  settings.tagFit = JSON.parse(JSON.stringify(DEFAULT_TAG_FIT));
+  settings.minStrongPerZone = DEFAULT_SETTINGS.minStrongPerZone;
+  settings.maxDevelopingPerZone = DEFAULT_SETTINGS.maxDevelopingPerZone;
+  settings.fairnessPriority = DEFAULT_SETTINGS.fairnessPriority;
+  persistSettings();
+  applySettings();
+}
+
+// ============== TAB NAV ==============
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+  document.getElementById('game-controls').style.visibility = name === 'game' ? 'visible' : 'hidden';
+  if (name === 'history') renderHistory();
+}
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => switchTab(t.dataset.tab);
+});
+
+// ============== ADMIN ==============
+document.querySelectorAll('#mode-radio .radio-opt').forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll('#mode-radio .radio-opt').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    const og = document.getElementById('set-onground');
+    og.value = el.dataset.mode === 'fullground' ? 18 : 12;
+    updateOnGroundHint();
+  };
+});
+
+document.querySelectorAll('#fairness-radio .radio-opt').forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll('#fairness-radio .radio-opt').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+  };
+});
+
+function saveSettings() {
+  const tn = document.getElementById('set-teamname').value.trim() || 'Rotation Board';
+  const sl = document.getElementById('set-season').value.trim() || 'Season';
+  const mode = document.querySelector('#mode-radio .radio-opt.selected')?.dataset.mode || 'zoned';
+  const og = parseInt(document.getElementById('set-onground').value);
+  const minStrong = parseInt(document.getElementById('set-minstrong').value);
+  const maxDev = parseInt(document.getElementById('set-maxdev').value);
+  const fairness = document.querySelector('#fairness-radio .radio-opt.selected')?.dataset.fairness || 'equal';
+
+  if (isNaN(og) || og < 6 || og > 22) { alert('On-ground number must be between 6 and 22.'); return; }
+  if (isNaN(minStrong) || minStrong < 0) { alert('Min Strong must be 0 or more.'); return; }
+  if (isNaN(maxDev) || maxDev < 0) { alert('Max Developing must be 0 or more.'); return; }
+
+  const modeChanged = settings.mode !== mode;
+
+  settings.teamName = tn;
+  settings.seasonLabel = sl;
+  settings.mode = mode;
+  settings.defaultOnGround = og;
+  settings.minStrongPerZone = minStrong;
+  settings.maxDevelopingPerZone = maxDev;
+  settings.fairnessPriority = fairness;
+  persistSettings();
+
+  if (modeChanged) {
+    rotations = { 1:null, 2:null, 3:null, 4:null };
+    if (editingMatchId) {
+      editingMatchId = null;
+      saveEditingId();
+    }
+    saveRotations();
+  }
+
+  document.getElementById('onground').dataset.touched = '';
+  applySettings();
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+
+  const banner = document.getElementById('save-banner');
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 2000);
+}
+
+document.getElementById('onground').addEventListener('input', e => {
+  e.target.dataset.touched = '1';
+});
+
+// ============== EDIT / SAVE MATCH ==============
+function editMatch(id) {
+  const match = history.find(m => m.id === id);
+  if (!match) return;
+
+  const hasDraftContent = Object.values(rotations).some(q => q !== null);
+  if (hasDraftContent && !editingMatchId) {
+    if (!confirm('You have an unsaved draft. Loading this match will replace it. Continue?')) return;
+  }
+  if (editingMatchId && editingMatchId !== id) {
+    if (!confirm('You are already editing another match. Switch to this one? (Changes to the other will be discarded.)')) return;
+  }
+
+  rotations = JSON.parse(JSON.stringify(match.rotations));
+  editingMatchId = match.id;
+
+  const ogInput = document.getElementById('onground');
+  if (match.onGround) {
+    ogInput.value = match.onGround;
+    ogInput.dataset.touched = '1';
+  }
+
+  saveRotations();
+  saveEditingId();
+
+  switchTab('game');
+  currentQuarter = 1;
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+function cancelEdit() {
+  if (!editingMatchId) return;
+  const match = history.find(m => m.id === editingMatchId);
+  const label = match ? match.label : 'this match';
+  if (!confirm(`Discard changes to "${label}"? The original stays in history unchanged.`)) return;
+  rotations = { 1:null, 2:null, 3:null, 4:null };
+  editingMatchId = null;
+  saveRotations();
+  saveEditingId();
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+function openSaveMatchModal() {
+  const hasContent = Object.values(rotations).some(q => q !== null);
+  if (!hasContent) {
+    alert('No match to save. Click Generate first.');
+    return;
+  }
+
+  const editingMatch = editingMatchId ? history.find(m => m.id === editingMatchId) : null;
+
+  document.getElementById('save-modal-title').textContent = editingMatch ? 'Update Saved Match' : 'Save Match to Season';
+  document.getElementById('save-modal-desc').textContent = editingMatch
+    ? `Update "${editingMatch.label}" with your edits. The original entry is replaced.`
+    : 'This locks the current rotations into your season history.';
+  document.getElementById('save-match-confirm').textContent = editingMatch ? '✓ Update Match' : '✓ Save Match';
+
+  document.getElementById('save-match-label').value = editingMatch ? editingMatch.label : `Match ${history.length + 1}`;
+  const defaultDate = editingMatch
+    ? editingMatch.date.slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  document.getElementById('save-match-date').value = defaultDate;
+
+  document.getElementById('save-match-modal').classList.add('open');
+}
+
+function closeSaveMatchModal() {
+  document.getElementById('save-match-modal').classList.remove('open');
+}
+
+function confirmSaveMatch() {
+  const label = document.getElementById('save-match-label').value.trim() || `Match ${history.length + 1}`;
+  const dateStr = document.getElementById('save-match-date').value;
+  const date = dateStr ? new Date(dateStr + 'T00:00:00').toISOString() : new Date().toISOString();
+  const og = parseInt(document.getElementById('onground').value) || 0;
+
+  if (editingMatchId) {
+    // Replace in place, preserving id
+    const idx = history.findIndex(m => m.id === editingMatchId);
+    if (idx >= 0) {
+      history[idx] = {
+        id: editingMatchId,
+        label,
+        date,
+        onGround: og,
+        mode: settings.mode,
+        rotations: JSON.parse(JSON.stringify(rotations))
+      };
+    }
+    editingMatchId = null;
+    saveEditingId();
+  } else {
+    history.push({
+      id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      label,
+      date,
+      onGround: og,
+      mode: settings.mode,
+      rotations: JSON.parse(JSON.stringify(rotations))
+    });
+  }
+
+  rotations = { 1:null, 2:null, 3:null, 4:null };
+  saveHistory();
+  saveRotations();
+  closeSaveMatchModal();
+
+  currentQuarter = 1;
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+  renderHistory();
+  alert(`✓ "${label}" saved.`);
+}
+
+function deleteMatch(id) {
+  const match = history.find(m => m.id === id);
+  if (!match) return;
+  if (id === editingMatchId) {
+    if (!confirm(`"${match.label}" is currently being edited. Delete it permanently? Your edits will also be discarded.`)) return;
+    rotations = { 1:null, 2:null, 3:null, 4:null };
+    editingMatchId = null;
+    saveRotations();
+    saveEditingId();
+  } else {
+    if (!confirm(`Delete "${match.label}" from season history? This can't be undone.`)) return;
+  }
+  history = history.filter(m => m.id !== id);
+  saveHistory();
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+  renderHistory();
+}
+
+function printMatchFromHistory(id) {
+  printingMatch = history.find(m => m.id === id);
+  if (!printingMatch) return;
+  window.print();
+}
+
+// ============== EXPORT / IMPORT ==============
+function exportData() {
+  const data = {
+    version: 4,
+    exportedAt: new Date().toISOString(),
+    settings, squad, history, rotations
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = (settings.teamName || 'rotation').replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  a.href = url;
+  a.download = `${safeName}-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm('Import will replace your current squad, settings, season history, and draft. Continue?')) {
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.settings) {
+        settings = { ...DEFAULT_SETTINGS, ...data.settings };
+        settings.tagFit = { ...DEFAULT_TAG_FIT, ...(data.settings.tagFit || {}) };
+        persistSettings();
+      }
+      if (data.squad) { squad = data.squad; saveSquad(); }
+      if (data.history) { history = data.history; saveHistory(); }
+      if (data.rotations) { rotations = data.rotations; saveRotations(); }
+      editingMatchId = null;
+      saveEditingId();
+      applySettings();
+      renderSquad();
+      renderQuarters();
+      renderCurrentQuarter();
+      recomputeSeason();
+      renderHistory();
+      updateAdminCounts();
+      alert('Import complete.');
+    } catch (err) {
+      alert('Could not read that file. Make sure it\'s a backup from this app.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ============== SQUAD UI ==============
+function renderSquad() {
+  const el = document.getElementById('squad');
+  el.innerHTML = '';
+  squad.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    const dots = '●'.repeat(p.rating) + '<span style="opacity:0.2">' + '●'.repeat(3-p.rating) + '</span>';
+    row.innerHTML = `
+      <div class="jumper">${p.num}</div>
+      <div>
+        <div class="player-name">${p.name} <span class="chip-rating">${dots}</span></div>
+        <div class="player-tags">${p.tags.join(' · ') || '—'}</div>
+      </div>
+      <button class="icon-btn" onclick="openPlayerModal(${p.id})">✎</button>
+      <div class="toggle ${p.available ? 'on' : ''}" onclick="toggleAvail(${p.id})"></div>
+    `;
+    el.appendChild(row);
+  });
+  document.getElementById('available-count').textContent = squad.filter(p => p.available).length + ' avail';
+  updateAdminCounts();
+}
+
+function updateAdminCounts() {
+  const sEl = document.getElementById('admin-squad-count');
+  const hEl = document.getElementById('admin-history-count');
+  if (sEl) sEl.textContent = squad.length;
+  if (hEl) hEl.textContent = history.length;
+}
+
+function updateHistoryCounts() {
+  const totalQuarters = history.reduce((sum, m) => {
+    return sum + Object.values(m.rotations || {}).filter(q => q !== null).length;
+  }, 0);
+  document.getElementById('history-count').textContent = history.length ? `(${history.length})` : '';
+  document.getElementById('season-summary').textContent =
+    `from ${history.length} saved match${history.length === 1 ? '' : 'es'}`;
+  document.getElementById('history-summary-count').textContent = history.length;
+  document.getElementById('history-summary-quarters').textContent = totalQuarters;
+  if (history.length) {
+    const earliest = [...history].sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+    document.getElementById('history-summary-since').textContent =
+      new Date(earliest.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+  } else {
+    document.getElementById('history-summary-since').textContent = '—';
+  }
+  updateAdminCounts();
+}
+
+function toggleAvail(id) {
+  const p = squad.find(x => x.id === id);
+  p.available = !p.available;
+  saveSquad();
+  renderSquad();
+}
+
+// ============== PLAYER MODAL ==============
+function openPlayerModal(id) {
+  editingPlayerId = id || null;
+  const modal = document.getElementById('modal');
+  const deleteBtn = document.getElementById('m-delete');
+
+  if (id) {
+    const p = squad.find(x => x.id === id);
+    document.getElementById('modal-title').textContent = 'Edit Player';
+    document.getElementById('m-name').value = p.name;
+    document.getElementById('m-num').value = p.num;
+    document.getElementById('m-rating').value = p.rating;
+    document.querySelectorAll('#m-tags .tag-opt').forEach(el => {
+      el.classList.toggle('selected', p.tags.includes(el.dataset.tag));
+    });
+    deleteBtn.style.display = 'inline-block';
+  } else {
+    document.getElementById('modal-title').textContent = 'Add Player';
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-num').value = (Math.max(0, ...squad.map(p=>p.num)) + 1);
+    document.getElementById('m-rating').value = 2;
+    document.querySelectorAll('#m-tags .tag-opt').forEach(el => el.classList.remove('selected'));
+    deleteBtn.style.display = 'none';
+  }
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editingPlayerId = null;
+}
+
+document.querySelectorAll('#m-tags .tag-opt').forEach(el => {
+  el.onclick = () => {
+    const selected = document.querySelectorAll('#m-tags .tag-opt.selected').length;
+    if (!el.classList.contains('selected') && selected >= 3) return;
+    el.classList.toggle('selected');
+  };
+});
+
+function savePlayer() {
+  const name = document.getElementById('m-name').value.trim();
+  const num = parseInt(document.getElementById('m-num').value);
+  const rating = parseInt(document.getElementById('m-rating').value);
+  const tags = Array.from(document.querySelectorAll('#m-tags .tag-opt.selected')).map(el => el.dataset.tag);
+
+  if (!name || isNaN(num)) { alert('Name and jumper number required'); return; }
+
+  if (editingPlayerId) {
+    const p = squad.find(x => x.id === editingPlayerId);
+    p.name = name; p.num = num; p.rating = rating; p.tags = tags;
+    // Update draft rotations only (history is a snapshot)
+    Object.values(rotations).forEach(q => {
+      if (!q) return;
+      ['fwd','mid','back','bench'].forEach(z => {
+        q[z] = q[z].map(pl => pl.id === editingPlayerId ? p : pl);
+      });
+    });
+    saveRotations();
+  } else {
+    const newId = Math.max(0, ...squad.map(p => p.id)) + 1;
+    squad.push({ id: newId, name, num, rating, tags, available: true });
+  }
+  saveSquad();
+  closeModal();
+  renderSquad();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+function deletePlayer() {
+  if (!editingPlayerId) return;
+  if (!confirm('Remove this player from the squad? (Their past match data stays in history.)')) return;
+  squad = squad.filter(p => p.id !== editingPlayerId);
+  Object.values(rotations).forEach(q => {
+    if (!q) return;
+    ['fwd','mid','back','bench'].forEach(z => {
+      q[z] = q[z].filter(p => p.id !== editingPlayerId);
+    });
+  });
+  saveSquad(); saveRotations();
+  closeModal();
+  renderSquad();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+// ============== QUARTERS ==============
+function renderQuarters() {
+  const el = document.getElementById('quarters');
+  el.innerHTML = '';
+  for (let q = 1; q <= 4; q++) {
+    const tab = document.createElement('div');
+    tab.className = 'quarter-tab' + (q === currentQuarter ? ' active' : '');
+    tab.innerHTML = `<div class="quarter-num">Q${q}</div><div class="quarter-label">${rotations[q] ? 'Set' : 'Empty'}</div>`;
+    tab.onclick = () => { currentQuarter = q; renderQuarters(); renderCurrentQuarter(); };
+    el.appendChild(tab);
+  }
+}
+
+// ============== GENERATE ==============
+function generateRotations() {
+  const onGround = parseInt(document.getElementById('onground').value);
+  if (isNaN(onGround) || onGround < 6 || onGround > 22) {
+    alert('On-ground number must be between 6 and 22.');
+    return;
+  }
+  const available = squad.filter(p => p.available);
+  if (available.length < onGround) {
+    alert(`Only ${available.length} players available — need at least ${onGround}.`);
+    return;
+  }
+
+  if (editingMatchId) {
+    const m = history.find(x => x.id === editingMatchId);
+    const label = m ? m.label : 'a saved match';
+    if (!confirm(`You're editing "${label}". Generating will discard your edits and start a fresh draft. Continue?`)) return;
+    editingMatchId = null;
+    saveEditingId();
+  }
+
+  const sizes = calcZoneSizes(onGround);
+  const weights = FAIRNESS_WEIGHTS[settings.fairnessPriority] || FAIRNESS_WEIGHTS.equal;
+  const minStrong = settings.minStrongPerZone;
+  const maxDev = settings.maxDevelopingPerZone;
+
+  // Use history-only totals as the baseline (don't bias against current draft)
+  const baselineTotals = computeSeasonTotalsFromHistory();
+
+  const playerZones = {};
+  available.forEach(p => playerZones[p.id] = []);
+
+  rotations = { 1:null, 2:null, 3:null, 4:null };
+
+  for (let q = 1; q <= 4; q++) {
+    const zones = { fwd: [], mid: [], back: [] };
+    const zoneKeys = ['fwd','mid','back'];
+
+    const benchCount = available.length - onGround;
+    const benchSorted = [...available].sort((a,b) => {
+      // Primary: distribute bench within this game (no one benched twice if possible)
+      const aGame = playerZones[a.id].filter(z => z === 'bench').length;
+      const bGame = playerZones[b.id].filter(z => z === 'bench').length;
+      if (aGame !== bGame) return aGame - bGame;
+      // Tie-break: prefer benching players with less season bench time so far
+      const aSeason = baselineTotals[a.id]?.bench || 0;
+      const bSeason = baselineTotals[b.id]?.bench || 0;
+      return aSeason - bSeason;
+    });
+    const benched = benchSorted.slice(0, benchCount).map(p => p.id);
+    const onField = available.filter(p => !benched.includes(p.id));
+
+    for (const zoneKey of zoneKeys) {
+      const zoneIdx = zoneKeys.indexOf(zoneKey);
+      const targetSize = sizes[zoneIdx];
+
+      const unassigned = onField.filter(p =>
+        !zones.fwd.includes(p) && !zones.mid.includes(p) && !zones.back.includes(p)
+      );
+
+      const scored = unassigned.map(p => {
+        let score = 0;
+        if (!playerZones[p.id].includes(zoneKey)) score += weights.variety;
+        score -= (baselineTotals[p.id]?.[zoneKey] || 0) * weights.season;
+        for (const tag of p.tags) {
+          if (settings.tagFit?.[tag]?.[zoneKey]) score += weights.tagFit;
+        }
+        return { player: p, score };
+      });
+
+      scored.sort((a,b) => b.score - a.score);
+
+      const picked = [];
+      const pickedIds = new Set();
+
+      const strongAvail = scored.filter(x => x.player.rating === 3);
+      const strongToAdd = Math.min(minStrong, strongAvail.length, targetSize);
+      for (let i = 0; i < strongToAdd; i++) {
+        picked.push(strongAvail[i]);
+        pickedIds.add(strongAvail[i].player.id);
+      }
+
+      let devCount = picked.filter(x => x.player.rating === 1).length;
+      for (const cand of scored) {
+        if (picked.length >= targetSize) break;
+        if (pickedIds.has(cand.player.id)) continue;
+        if (cand.player.rating === 1 && devCount >= maxDev) continue;
+        picked.push(cand);
+        pickedIds.add(cand.player.id);
+        if (cand.player.rating === 1) devCount++;
+      }
+
+      if (picked.length < targetSize) {
+        for (const cand of scored) {
+          if (picked.length >= targetSize) break;
+          if (pickedIds.has(cand.player.id)) continue;
+          picked.push(cand);
+          pickedIds.add(cand.player.id);
+        }
+      }
+
+      zones[zoneKey] = picked.map(x => x.player);
+    }
+
+    zones.fwd.forEach(p => playerZones[p.id].push('fwd'));
+    zones.mid.forEach(p => playerZones[p.id].push('mid'));
+    zones.back.forEach(p => playerZones[p.id].push('back'));
+    benched.forEach(id => playerZones[id].push('bench'));
+
+    rotations[q] = {
+      fwd: zones.fwd,
+      mid: zones.mid,
+      back: zones.back,
+      bench: benched.map(id => squad.find(p => p.id === id))
+    };
+  }
+
+  saveRotations();
+  currentQuarter = 1;
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+function chip(p) {
+  const dots = '●'.repeat(p.rating);
+  return `<span class="chip" draggable="true" data-player-id="${p.id}" ondragstart="onDragStart(event,${p.id})" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,${p.id})"><span class="jumper">${p.num}</span>${p.name} <span class="chip-rating">${dots}</span></span>`;
+}
+
+function renderCurrentQuarter() {
+  document.getElementById('quarter-title').textContent = 'QUARTER ' + currentQuarter;
+  const q = rotations[currentQuarter];
+  const hasAnyContent = Object.values(rotations).some(x => x !== null);
+  const badge = document.getElementById('draft-badge');
+
+  // Editing banner + badge
+  const editingBar = document.getElementById('editing-bar');
+  if (editingMatchId) {
+    const match = history.find(m => m.id === editingMatchId);
+    const label = match ? match.label : 'match';
+    editingBar.classList.add('show');
+    document.getElementById('editing-label').textContent = `EDITING ${label.toUpperCase()}`;
+    badge.style.display = 'inline-block';
+    badge.textContent = 'EDITING';
+    badge.classList.add('editing');
+  } else {
+    editingBar.classList.remove('show');
+    badge.classList.remove('editing');
+    if (hasAnyContent) {
+      badge.style.display = 'inline-block';
+      badge.textContent = 'DRAFT · NOT SAVED';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  const fwdEl = document.getElementById('fwd-chips');
+  const midEl = document.getElementById('mid-chips');
+  const backEl = document.getElementById('back-chips');
+  const benchEl = document.getElementById('bench-chips');
+
+  if (!q) {
+    fwdEl.innerHTML = midEl.innerHTML = backEl.innerHTML = benchEl.innerHTML =
+      '<em style="color:var(--grey);font-size:12px;">Click Generate to build rotations</em>';
+    ['fwd','mid','back'].forEach(z => {
+      document.getElementById(z+'-count').textContent = '0 players';
+      document.getElementById(z+'-balance').textContent = '';
+    });
+    document.getElementById('zone-size').textContent = '— / — / — per zone';
+    return;
+  }
+
+  fwdEl.innerHTML = q.fwd.map(chip).join('');
+  midEl.innerHTML = q.mid.map(chip).join('');
+  backEl.innerHTML = q.back.map(chip).join('');
+  benchEl.innerHTML = q.bench.length ? q.bench.map(chip).join('') : '<em style="color:var(--grey);font-size:12px;">No bench this quarter</em>';
+
+  document.getElementById('zone-size').textContent =
+    `${q.fwd.length} / ${q.mid.length} / ${q.back.length} per zone`;
+
+  ['fwd','mid','back'].forEach(z => {
+    const players = q[z];
+    document.getElementById(z+'-count').textContent = players.length + ' players';
+    const balanceEl = document.getElementById(z+'-balance');
+    if (players.length === 0) { balanceEl.textContent = ''; return; }
+    const avgRating = players.reduce((s,p)=>s+p.rating,0) / players.length;
+    if (avgRating >= 1.8 && avgRating <= 2.4) {
+      balanceEl.textContent = '· BALANCED';
+      balanceEl.className = 'zone-balance good';
+    } else {
+      balanceEl.textContent = avgRating > 2.4 ? '· STACKED' : '· LIGHT';
+      balanceEl.className = 'zone-balance warn';
+    }
+  });
+}
+
+// ============== DRAG & DROP ==============
+let draggingPlayerId = null;
+
+function onDragStart(e, playerId) {
+  draggingPlayerId = playerId;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', playerId);
+}
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onDrop(e, targetZone) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!draggingPlayerId || !rotations[currentQuarter]) return;
+  movePlayer(draggingPlayerId, targetZone);
+  draggingPlayerId = null;
+}
+
+let touchChip = null;
+let touchGhost = null;
+
+function onTouchStart(e, playerId) {
+  if (!rotations[currentQuarter]) return;
+  e.preventDefault();
+  touchChip = e.currentTarget;
+  draggingPlayerId = playerId;
+  touchChip.classList.add('dragging');
+
+  touchGhost = touchChip.cloneNode(true);
+  touchGhost.style.position = 'fixed';
+  touchGhost.style.pointerEvents = 'none';
+  touchGhost.style.opacity = '0.85';
+  touchGhost.style.zIndex = '9999';
+  touchGhost.classList.remove('dragging');
+  document.body.appendChild(touchGhost);
+
+  const t = e.touches[0];
+  positionGhost(t.clientX, t.clientY);
+
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd);
+}
+
+function positionGhost(x, y) {
+  if (!touchGhost) return;
+  touchGhost.style.left = (x - 40) + 'px';
+  touchGhost.style.top = (y - 15) + 'px';
+}
+
+function onTouchMove(e) {
+  if (!touchGhost) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  positionGhost(t.clientX, t.clientY);
+
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  const elBelow = document.elementFromPoint(t.clientX, t.clientY);
+  const dropZone = elBelow ? elBelow.closest('[data-zone]') : null;
+  if (dropZone) dropZone.classList.add('drag-over');
+}
+
+function onTouchEnd(e) {
+  document.removeEventListener('touchmove', onTouchMove);
+  document.removeEventListener('touchend', onTouchEnd);
+
+  const touch = e.changedTouches[0];
+  const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+  const dropZone = elBelow ? elBelow.closest('[data-zone]') : null;
+
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (touchChip) touchChip.classList.remove('dragging');
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+
+  if (dropZone && draggingPlayerId) {
+    movePlayer(draggingPlayerId, dropZone.dataset.zone);
+  }
+  touchChip = null;
+  draggingPlayerId = null;
+}
+
+function movePlayer(playerId, targetZone) {
+  const q = rotations[currentQuarter];
+  const player = squad.find(p => p.id === playerId);
+  if (!q || !player) return;
+
+  ['fwd','mid','back','bench'].forEach(z => {
+    q[z] = q[z].filter(p => p.id !== playerId);
+  });
+  q[targetZone].push(player);
+
+  saveRotations();
+  renderCurrentQuarter();
+  recomputeSeason();
+}
+
+// ============== TRACKER ==============
+function renderTracker() {
+  const tbody = document.getElementById('tracker-body');
+  tbody.innerHTML = '';
+  squad.forEach(p => {
+    const t = seasonTotals[p.id] || { fwd:0, mid:0, back:0, bench:0 };
+    const totalPlayed = t.fwd + t.mid + t.back;
+    const flag = totalPlayed >= 4 && t.fwd < 2 ? '<span class="flag">Needs FWD</span>' : '';
+    tbody.innerHTML += `
+      <tr>
+        <td>#${p.num} ${p.name}</td>
+        <td class="heat-${Math.min(3,t.fwd)}">${t.fwd}</td>
+        <td class="heat-${Math.min(3,t.mid)}">${t.mid}</td>
+        <td class="heat-${Math.min(3,t.back)}">${t.back}</td>
+        <td>${t.bench}</td>
+        <td>${flag}</td>
+      </tr>
+    `;
+  });
+}
+
+// ============== HISTORY VIEW ==============
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  if (history.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <h3>No matches saved yet</h3>
+        <p>Generate rotations on Game Day, then hit <strong>✓ Save Match</strong> when the match is finished.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const sorted = [...history].sort((a,b) => new Date(b.date) - new Date(a.date));
+  el.innerHTML = '';
+  sorted.forEach(m => {
+    const quartersPlayed = Object.values(m.rotations || {}).filter(q => q !== null).length;
+    const dateStr = new Date(m.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const modeLabel = m.mode === 'fullground' ? 'Full Ground' : 'Zoned';
+    const isEditing = m.id === editingMatchId;
+    const card = document.createElement('div');
+    card.className = 'history-card' + (isEditing ? ' being-edited' : '');
+    card.innerHTML = `
+      <div>
+        <div class="history-label">${m.label}${isEditing ? ' <span class="editing-tag" style="font-size:12px;color:var(--blue);">· EDITING</span>' : ''}</div>
+        <div class="history-meta">${dateStr} · ${quartersPlayed}Q · ${m.onGround} on ground · ${modeLabel}</div>
+      </div>
+      <div class="history-actions">
+        ${isEditing
+          ? '<button onclick="switchTab(\'game\')">Continue editing</button>'
+          : '<button class="warn" onclick="editMatch(\'' + m.id + '\')">✎ Edit</button>'
+        }
+        <button onclick="printMatchFromHistory('${m.id}')">🖨 Print</button>
+        <button class="danger" onclick="deleteMatch('${m.id}')">Delete</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function resetSeason() {
+  if (!confirm('Reset the whole season? This deletes ALL saved match history and the current draft. There is no undo.')) return;
+  if (!confirm('Are you sure? This wipes everything except your squad and settings.')) return;
+  history = [];
+  rotations = { 1:null, 2:null, 3:null, 4:null };
+  editingMatchId = null;
+  saveHistory();
+  saveRotations();
+  saveEditingId();
+  renderQuarters();
+  renderCurrentQuarter();
+  recomputeSeason();
+  renderHistory();
+}
+
+// ============== PRINT ==============
+window.addEventListener('beforeprint', buildPrintView);
+window.addEventListener('afterprint', () => { printingMatch = null; });
+
+function buildPrintView() {
+  const container = document.getElementById('print-view');
+  container.innerHTML = '';
+  const date = new Date().toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const sourceRotations = printingMatch ? printingMatch.rotations : rotations;
+  const matchLabel = printingMatch
+    ? `${settings.teamName} · ${printingMatch.label} · ${new Date(printingMatch.date).toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' })}`
+    : `${settings.teamName} · ${date}`;
+  const printMode = printingMatch ? printingMatch.mode : settings.mode;
+
+  let any = false;
+  for (let q = 1; q <= 4; q++) {
+    const r = sourceRotations[q];
+    if (!r) continue;
+    any = true;
+
+    const page = document.createElement('div');
+    page.className = 'print-page';
+    const fwdSub = printMode === 'fullground' ? '<div class="zone-sub">forwards + half-forwards</div>' : '';
+    const midSub = printMode === 'fullground' ? '<div class="zone-sub">centre + wings + ruck</div>' : '';
+    const backSub = printMode === 'fullground' ? '<div class="zone-sub">backs + half-backs</div>' : '';
+
+    page.innerHTML = `
+      <div class="print-header">
+        <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;">${matchLabel}</div>
+        <h1>QUARTER ${q}</h1>
+      </div>
+      <div class="ground">
+        <div class="zone zone-forward">
+          <div class="zone-header"><div><div class="zone-title">FORWARD</div>${fwdSub}</div><div class="zone-count">${r.fwd.length} players</div></div>
+          <div class="player-chips">${r.fwd.map(chip).join('')}</div>
+        </div>
+        <div class="zone zone-mid">
+          <div class="zone-header"><div><div class="zone-title">MIDFIELD</div>${midSub}</div><div class="zone-count">${r.mid.length} players</div></div>
+          <div class="player-chips">${r.mid.map(chip).join('')}</div>
+        </div>
+        <div class="zone zone-back">
+          <div class="zone-header"><div><div class="zone-title">BACK</div>${backSub}</div><div class="zone-count">${r.back.length} players</div></div>
+          <div class="player-chips">${r.back.map(chip).join('')}</div>
+        </div>
+      </div>
+      <div class="bench" style="margin-top:12px;">
+        <div class="bench-title">BENCH (${r.bench.length})</div>
+        <div class="player-chips">${r.bench.length ? r.bench.map(chip).join('') : '<em>No bench</em>'}</div>
+      </div>
+    `;
+    container.appendChild(page);
+  }
+
+  if (!any) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;"><h2>No rotations to print</h2><p>Click Generate first.</p></div>';
+  }
+}
+
+// ============== INIT ==============
+loadState();
+applySettings();
+renderSquad();
+renderQuarters();
+renderCurrentQuarter();
+recomputeSeason();
+</script>
+</body>
+</html>
